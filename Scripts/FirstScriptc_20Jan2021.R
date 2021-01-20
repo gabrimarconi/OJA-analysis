@@ -15,4 +15,5 @@ is.integer(n_prova)
 max(n_prova)
 head(n_prova)
 n_prova$n_prova[n_prova>10]
-
+as.numeric(n_prova)
+n_prova <- as.data.frame(n_prova)
