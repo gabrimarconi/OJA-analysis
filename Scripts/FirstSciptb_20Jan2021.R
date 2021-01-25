@@ -3,11 +3,13 @@ library(wihoja)
 query_athena("")
 n
 
+#new line to test git tracking
+
 query_athena("select * from ")
 query_athena("select * from ")
 query_athena("select * from ")
 
-query_athena("select * from estat_dsl2531b_oja.ft_document_en_v5 limit 10")
+query_athena("select * from estat_dsl2531b_oja.ft_document_en_v8 limit 10")
 
 oja <- query_athena("select * from estat_dsl2531b_oja.ft_document_en_v8 limit 10")
 
@@ -16,6 +18,8 @@ company_names_lu <- query_athena("select distinct companyname from estat_dsl2531
 View(company_names_lu)
 
 oja <- get_oja()
+View(oja)
+unique(oja$month_grab_date)
 
 oja <- get_oja(idcountry = "LU")
 
