@@ -71,8 +71,9 @@ View(companies_names_dataframe)
 View(companies_names_dataframe_bynames)
 #total number of distinct company names found (with an upper bound due to the limit of obs allowed)
 sum(companies_freqtable$n_companies)
-
-View(filteredout)
+#total number of distinct company and of job ads that are filtered out
+sum(filteredout$Freq)
+sum(companies_names_dataframe$Freq)
 
 
 

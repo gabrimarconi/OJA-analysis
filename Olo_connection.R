@@ -1,6 +1,6 @@
 
 
-install.packages("DBI")
+#install.packages("DBI")
 library(reticulate)
 library(DBI)
 library(RAthena)
@@ -24,9 +24,9 @@ get_data <- function(query){
 }
 
 
-query <-  "SELECT * FROM estat_dsl2531b_oja.ft_document_en_v8 ORDER BY RAND() LIMIT 10;"
+#query <-  "SELECT * FROM estat_dsl2531b_oja.ft_document_en_v8 ORDER BY RAND() LIMIT 10;"
 
-documents1232ws <- get_data(query)
+#documents1232ws <- get_data(query)
 
 #View(documents1232ws)
 
