@@ -17,8 +17,8 @@ library(tidyverse)
 
 ###creating a table with company names' frequency, sorted by frequency or company name
 #query and deduplication
-#companies_names_query <- query_athena("SELECT companyname, general_id FROM estat_dsl2531b_oja.ft_document_en_v8 WHERE ((year_grab_date=2019) AND (idcountry='IT')) ORDER BY RAND()  LIMIT 1000000")
-companies_names_query <- query_athena("SELECT companyname, general_id FROM estat_dsl2531b_oja.ft_document_en_v8 WHERE ((year_grab_date=2019) AND (month_grab_date=1 OR month_grab_date=2 OR month_grab_date=3) AND (idcountry='IT')) ORDER BY RAND()  LIMIT 1000000")
+companies_names_query <- query_athena("SELECT companyname, general_id FROM estat_dsl2531b_oja.ft_document_en_v8 WHERE ((year_grab_date=2019) AND (idcountry='IT')) ORDER BY RAND()  LIMIT 1000000")
+#companies_names_query <- query_athena("SELECT companyname, general_id FROM estat_dsl2531b_oja.ft_document_en_v8 WHERE ((year_grab_date=2019) AND (month_grab_date=1 OR month_grab_date=2 OR month_grab_date=3) AND (idcountry='LU')) ORDER BY RAND()  LIMIT 1000000")
 dim(companies_names_query)
 companies_names_query$dup <- ifelse(duplicated(companies_names_query$general_id), 1, 0)
 companies_names_query <- companies_names_query[companies_names_query$dup==0]
@@ -35,13 +35,15 @@ View(companies_names_dataframe)
 
 #doing some standardisation of company names and dropping empty company names
 companies_names_dataframe$companyname <- str_to_lower(companies_names_dataframe$companyname)
-companies_names_dataframe$companyname <- gsub(",|;|\\.","",companies_names_dataframe$companyname)
+companies_names_dataframe$companyname <- gsub(",|;|\|.|?|!|#|-","",companies_names_dataframe$companyname)
 companies_names_dataframe$companyname <- str_trim(companies_names_dataframe$companyname)
 companies_names_dataframe$notgood <- ifelse(companies_names_dataframe$companyname=="",1,0)
 companies_names_dataframe <- companies_names_dataframe[companies_names_dataframe$notgood != 1 , -3]
 
 #applying the job agency filter
-blacklist <- c("cross border talents","kelly services","hays","manpower","randstad","glecruit","egor","michael page","ray human capital","adecco","tempo-team ","industria criativa","select","randstad","eotim","approach people","gigroup","vertex","inditex careers","multitempo","rhmais","multipessoal","go work","iman","robert walters","wipjobs recruitment","global employability","expatica","alliance recruitment agency","new horizons","npaworldwide","airswift","experis","badenoch & clark","Robert Half","Huxley","recruit","recruitment","recruiting","talent","job","staff","staffing","hire","hiring")
+getwd()
+staff_agencies <- read.csv("Data/staff_agencies_IT.csv" , sep = ";")
+blacklist <- staff_agencies[ , 2]
 filteredout <- filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')))
 companies_names_dataframe <- mutate(companies_names_dataframe, companyname = replace(companyname, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')), NA))
 companies_names_dataframe <- companies_names_dataframe[!is.na(companies_names_dataframe$companyname) , ]
@@ -64,6 +66,13 @@ companies_freqtable$cum_prop_companies <- 100 * cumsum(companies_freqtable$n_com
 companies_freqtable$cum_n_companies <- cumsum(companies_freqtable$n_companies)
 head(companies_freqtable)
 
+
+### print and view output
+
+#print output
+write.csv(companies_freqtable , "companies_freqtable_IT.csv")
+write.csv(companies_names_dataframe , "companies_names_dataframe_IT.csv")
+write.csv(filteredout , "filteredout.csv")
 #cumulative distribution of ads and company names
 View(companies_freqtable)
 # list of company names by number of ads and alphabetical order
@@ -82,7 +91,7 @@ sum(companies_names_dataframe$Freq)
 
 
 
-
+### these charts are not used anymore
 
 ggplot(data = companies_freqtable) + 
   geom_point(mapping = aes(x = n_companies, y = ads_per_company))
@@ -94,69 +103,6 @@ ggplot(data = companies_by_name_table) +
 ggplot(data = companies_by_name_table) + 
   geom_point(mapping = aes(x = Var1, y = Freq)) +
   ylim(100,NA)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#querying the dataset
-company_names_it <- query_athena("select companyname from estat_dsl2531b_oja.ft_document_en_v8 where idcountry='IT' order by rand() limit 1000")
-View(company_names_it)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
