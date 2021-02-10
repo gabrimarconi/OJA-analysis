@@ -17,7 +17,7 @@ library(tidyverse)
 
 ###creating a table with company names' frequency, sorted by frequency or company name
 #query and deduplication
-companies_names_query <- query_athena("SELECT companyname, general_id FROM estat_dsl2531b_oja.ft_document_en_v8 WHERE ((year_grab_date=2019) AND (idcountry='IT')) ORDER BY RAND()  LIMIT 1000000")
+companies_names_query <- query_athena("SELECT companyname, general_id FROM estat_dsl2531b_oja.ft_document_en_v8 WHERE idcountry='IT' ORDER BY RAND()  LIMIT 1000000")
 #companies_names_query <- query_athena("SELECT companyname, general_id FROM estat_dsl2531b_oja.ft_document_en_v8 WHERE ((year_grab_date=2019) AND (month_grab_date=1 OR month_grab_date=2 OR month_grab_date=3) AND (idcountry='LU')) ORDER BY RAND()  LIMIT 1000000")
 dim(companies_names_query)
 companies_names_query$dup <- ifelse(duplicated(companies_names_query$general_id), 1, 0)
@@ -41,12 +41,13 @@ companies_names_dataframe$notgood <- ifelse(companies_names_dataframe$companynam
 companies_names_dataframe <- companies_names_dataframe[companies_names_dataframe$notgood != 1 , -3]
 
 #applying the job agency filter
-getwd()
 staff_agencies <- read.csv("Data/staff_agencies_IT.csv" , sep = ";")
-blacklist <- staff_agencies[ , 2]
-filteredout <- filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')))
-companies_names_dataframe <- mutate(companies_names_dataframe, companyname = replace(companyname, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')), NA))
+blacklist <- staff_agencies[staff_agencies$exact != "exact" , 2]
+blacklist_exact <- staff_agencies[staff_agencies$exact == "exact" , 2]
+filteredout <- filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | (companies_names_dataframe$companyname == paste(blacklist_exact, collapse = '|')) )
+companies_names_dataframe <- mutate(companies_names_dataframe, companyname = replace(companyname, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | (companies_names_dataframe$companyname == paste(blacklist_exact, collapse = '|')), NA))
 companies_names_dataframe <- companies_names_dataframe[!is.na(companies_names_dataframe$companyname) , ]
+
 
 
 # generating a table of number of companies having x ads
