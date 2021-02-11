@@ -26,36 +26,48 @@ companies_names_query <- companies_names_query[companies_names_query$dup==0]
 #background checks
 table(companies_names_query$dup)
 dim(companies_names_query)
+
 #creating a table with company names' frequency, sorted by frequency or company name
 companies_names_dataframe <- as.data.frame(table(companies_names_query$companyname))
 colnames(companies_names_dataframe) <- c("companyname","Freq")
 companies_names_dataframe <- arrange(companies_names_dataframe , desc(Freq))
 companies_names_dataframe_bynames <- arrange(companies_names_dataframe , companyname)
 str(companies_names_dataframe)
-View(companies_names_dataframe)
+
 
 #doing some standardisation of company names and dropping empty company names
 companies_names_dataframe$companyname <- str_to_lower(companies_names_dataframe$companyname)
-companies_names_dataframe$companyname <- gsub(",|;|\|.|?|!|#|-","",companies_names_dataframe$companyname)
+#companies_names_dataframe$companyname <- gsub(",|;|.","",companies_names_dataframe$companyname)
 companies_names_dataframe$companyname <- str_trim(companies_names_dataframe$companyname)
 companies_names_dataframe$companyname <- gsub(" ","_",companies_names_dataframe$companyname)
 companies_names_dataframe$notgood <- ifelse(companies_names_dataframe$companyname=="",1,0)
 companies_names_dataframe <- companies_names_dataframe[companies_names_dataframe$notgood != 1 , -3]
+dim(companies_names_dataframe)
 
 #applying the job agency filter
 staff_agencies <- read.csv("Data/staff_agencies_IT.csv" , sep = ";")
 blacklist <- staff_agencies[staff_agencies$exact != "exact" , 2]
 blacklist_exact <- staff_agencies[staff_agencies$exact == "exact" , 2]
 #filteredout <- filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | (companies_names_dataframe$companyname == paste(blacklist_exact, collapse = '|')) )
-filteredout <- filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | sub(paste(blacklist_exact, collapse = '|'),"",companies_names_dataframe$companyname) == "" )
-companies_names_dataframe <- mutate(companies_names_dataframe, companyname = replace(companyname, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | sub(paste(blacklist_exact, collapse = '|'),"",companies_names_dataframe$companyname) == "", NA))
-companies_names_dataframe <- companies_names_dataframe[!is.na(companies_names_dataframe$companyname) , ]
+length(blacklist)
+filteredout <- cbind.data.frame(0,0)[-1,]
+colnames(filteredout) <- c("companyname" , "Freq")
+for(i in 1:length(blacklist)) {
+  filteredout <- rbind(filteredout , filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, blacklist[i]) ) )
+  companies_names_dataframe <- filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, blacklist[i] , negate = TRUE))
+  }
+for(i in 1:length(blacklist_exact)) {
+  filteredout <- rbind(filteredout, filter(companies_names_dataframe, blacklist_exact[i] == companies_names_dataframe$companyname) )
+  companies_names_dataframe <- filter(companies_names_dataframe, blacklist_exact[i] != companies_names_dataframe$companyname)
+}
+filteredout <- arrange(filteredout , desc(Freq))
+dim(filteredout)
+dim(companies_names_dataframe)
+#the following commands would be equivalent to the previous loops but do not work with long strings as conditions
+#filteredout <- filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | sub(paste(blacklist_exact, collapse = '|'),"",companies_names_dataframe$companyname) == "" )
+#companies_names_dataframe <- mutate(companies_names_dataframe, companyname = replace(companyname, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | sub(paste(blacklist_exact, collapse = '|'),"",companies_names_dataframe$companyname) == "", NA))
+#companies_names_dataframe <- companies_names_dataframe[!is.na(companies_names_dataframe$companyname) , ]
 
-View(companies_names_dataframe)
-View(filteredout)
-"abc" == "abc" | "mama"
-paste(blacklist, collapse = '|')
-sub("ad|abcmama","","abcmama")==""
 
 # generating a table of number of companies having x ads
 companies_freqtable <- as.data.frame(table(companies_names_dataframe$Freq))
@@ -75,16 +87,14 @@ companies_freqtable$cum_n_companies <- cumsum(companies_freqtable$n_companies)
 head(companies_freqtable)
 
 
-View(filteredout)
-blacklist
-blacklist_exact
+
 
 ### print and view output
 
 #print output
-write.csv(companies_freqtable , "companies_freqtable_IT.csv")
-write.csv(companies_names_dataframe , "companies_names_dataframe_IT.csv")
-write.csv(filteredout , "filteredout.csv")
+write.csv(companies_freqtable , "Data/companies_freqtable_IT.csv")
+write.csv(companies_names_dataframe , "Data/companies_names_dataframe_IT.csv")
+write.csv(filteredout , "Data/filteredout.csv")
 #cumulative distribution of ads and company names
 View(companies_freqtable)
 # list of company names by number of ads and alphabetical order
@@ -95,6 +105,10 @@ sum(companies_freqtable$n_companies)
 #total number of distinct company and of job ads that are filtered out
 sum(filteredout$Freq)
 sum(companies_names_dataframe$Freq)
+#filteredout and blacklists
+View(filteredout)
+blacklist
+blacklist_exact
 
 
 
