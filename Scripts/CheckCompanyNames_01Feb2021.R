@@ -2,9 +2,10 @@
 
 
 #libraries and data connection
+#install.packages("wihoja")
 library(wihoja)
 open_oja_db()
-install.packages("tidyverse")
+#install.packages("tidyverse")
 library(tidyverse)
 
 #country <- "IT"
@@ -37,6 +38,7 @@ View(companies_names_dataframe)
 companies_names_dataframe$companyname <- str_to_lower(companies_names_dataframe$companyname)
 companies_names_dataframe$companyname <- gsub(",|;|\|.|?|!|#|-","",companies_names_dataframe$companyname)
 companies_names_dataframe$companyname <- str_trim(companies_names_dataframe$companyname)
+companies_names_dataframe$companyname <- gsub(" ","_",companies_names_dataframe$companyname)
 companies_names_dataframe$notgood <- ifelse(companies_names_dataframe$companyname=="",1,0)
 companies_names_dataframe <- companies_names_dataframe[companies_names_dataframe$notgood != 1 , -3]
 
@@ -44,11 +46,16 @@ companies_names_dataframe <- companies_names_dataframe[companies_names_dataframe
 staff_agencies <- read.csv("Data/staff_agencies_IT.csv" , sep = ";")
 blacklist <- staff_agencies[staff_agencies$exact != "exact" , 2]
 blacklist_exact <- staff_agencies[staff_agencies$exact == "exact" , 2]
-filteredout <- filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | (companies_names_dataframe$companyname == paste(blacklist_exact, collapse = '|')) )
-companies_names_dataframe <- mutate(companies_names_dataframe, companyname = replace(companyname, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | (companies_names_dataframe$companyname == paste(blacklist_exact, collapse = '|')), NA))
+#filteredout <- filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | (companies_names_dataframe$companyname == paste(blacklist_exact, collapse = '|')) )
+filteredout <- filter(companies_names_dataframe, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | sub(paste(blacklist_exact, collapse = '|'),"",companies_names_dataframe$companyname) == "" )
+companies_names_dataframe <- mutate(companies_names_dataframe, companyname = replace(companyname, str_detect(companies_names_dataframe$companyname, paste(blacklist, collapse = '|')) | sub(paste(blacklist_exact, collapse = '|'),"",companies_names_dataframe$companyname) == "", NA))
 companies_names_dataframe <- companies_names_dataframe[!is.na(companies_names_dataframe$companyname) , ]
 
-
+View(companies_names_dataframe)
+View(filteredout)
+"abc" == "abc" | "mama"
+paste(blacklist, collapse = '|')
+sub("ad|abcmama","","abcmama")==""
 
 # generating a table of number of companies having x ads
 companies_freqtable <- as.data.frame(table(companies_names_dataframe$Freq))
@@ -67,6 +74,10 @@ companies_freqtable$cum_prop_companies <- 100 * cumsum(companies_freqtable$n_com
 companies_freqtable$cum_n_companies <- cumsum(companies_freqtable$n_companies)
 head(companies_freqtable)
 
+
+View(filteredout)
+blacklist
+blacklist_exact
 
 ### print and view output
 
